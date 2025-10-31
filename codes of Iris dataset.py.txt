@@ -1,0 +1,289 @@
+Task 1
+CodeAlpha_Iris Flower Classification
+ 
+(Dataset from Kaggle)
+
+
+# importing libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# import from scikit-learn library
+
+from sklearn.preprocessing import LabelEncoder
+
+from sklearn.preprocessing import StandardScaler
+
+from sklearn.model_selection import train_test_split
+
+from sklearn.metrics import classification_report, confusion_matrix,  accuracy_score
+
+
+
+# Classifiers
+
+from sklearn.neighbors import KNeighborsClassifier
+
+from sklearn.tree import DecisionTreeClassifier
+
+from sklearn.ensemble import RandomForestClassifier
+
+from sklearn.svm import SVC
+
+#Loading The DataSet
+
+df= pd.read_csv('Iris.csv')
+
+df.head()
+
+Basic data exploration
+df.columns
+df.info()
+df.shape
+df.isnull().sum()
+df.duplicated().sum()
+df.describe()
+
+
+#data cleaning
+
+if 'Id' in df.columns:
+
+    df= df.drop('Id', axis=1)
+df.head()
+
+df['Species'].value_counts()
+
+#Correlation Analysis
+
+plt.figure(figsize=(6,4))
+
+sns.heatmap(df.corr(numeric_only=True), annot=True, cmap='coolwarm')
+
+plt.title("Correlation Matrix", fontsize=14, fontweight='bold')
+
+plt.show()
+
+#Pairplot of All Features by Species
+
+sns.pairplot(df, hue='Species', diag_kind='kde', corner=True)
+
+plt.suptitle("Pair Plot of All Features", y=1.02)
+
+plt.show()
+
+# Distribution of Features
+
+df.iloc[:, :-1].hist(figsize=(8,6),bins=13, color= 'gold')
+
+plt.suptitle("Feature distibutions- Histogram", fontsize=13)
+
+plt.show()
+
+#Sepal Width by Species
+
+df["SepalWidthCm"]= df["SepalWidthCm"].astype(float)
+
+plt.figure(figsize=(8,6))
+colors = ["red", "purple", "salmon"]
+
+sns.boxplot(data=df, x="Species", y="SepalWidthCm", palette=colors)
+
+plt.title("Box Plot of Sepal_Width by Species")
+
+plt.xlabel("Species")
+
+plt.ylabel("Sepal_Width")
+
+
+#Scatterplot - Petal length vs Petal Width
+
+plt.figure(figsize=(8,6))
+
+sns.scatterplot(x='PetalLengthCm', y='PetalWidthCm', hue='Species', data=df, palette='Set2')
+
+plt.xlabel('Petal_Length (cm)')
+plt.ylabel('Petal_Width (cm)')
+
+plt.title('Scatter Plot of Petal Length vs. Petal Width')
+
+plt.show()
+
+#Label Encoding & Train-Test Split
+
+
+
+#Label Encode Species ? convert text labels to numeric.
+
+#Split Dataset ? features (X) and target (y)
+# then into training and testing sets.
+
+
+# Label Encoding
+
+
+le = LabelEncoder()
+
+df['Species'] = le.fit_transform(df['Species'])
+
+print(le.classes_)      # Shows mapping (Setosa=0, Versicolor=1, Virginica=2)
+
+
+
+# Split features & target
+
+x = df.iloc[:, :-1]     # all features
+
+y = df['Species']       # target
+
+
+
+# Train-Test Split
+
+x_train, x_test, y_train, y_test = train_test_split(
+
+x, y, test_size=0.2, random_state=42, stratify=y
+)
+
+ 
+
+print("x_train shape:", x_train.shape)
+
+print("x_test shape:", x_test.shape)
+
+print("y_train shape:", y_train.shape)
+
+print("y_test shape:", y_test.shape)
+
+
+#Train Multiple ML Models
+
+
+
+#Initialize models
+
+
+
+models={
+'KNN':KNeighborsClassifier(),
+        'DecisionTree':DecisionTreeClassifier(),
+    
+        'SVM':SVC(),
+    
+        'LogisticRegression':LogisticRegression(),
+    
+        'RandomForest':RandomForestClassifier()   
+
+}
+
+
+
+#Train & Evaluate each Models
+
+
+for name, model in models.items():
+
+    model.fit(x_train, y_train)
+
+    y_pred = model.predict(x_test)
+
+    acc = accuracy_score(y_test, y_pred)
+
+    print(f"{name} Accuracy: {acc:.2f}")
+
+# Prepare list to store metrics
+
+results = []
+
+
+
+# Train & evaluate each model
+
+for name, model in models.items():
+
+    model.fit(x_train, y_train)
+
+    y_pred = model.predict(x_test)
+
+    
+    results.append({
+
+        "Model": name,
+
+        "Accuracy": round(accuracy_score(y_test, y_pred), 2),
+
+        "Precision": round(precision_score(y_test, y_pred, average='macro'), 2),
+
+        "Recall": round(recall_score(y_test, y_pred, average='macro'), 2),
+
+        "F1-Score": round(f1_score(y_test, y_pred, average='macro'), 2)
+
+    })
+
+
+
+# Convert results to DataFrame
+
+results_df = pd.DataFrame(results)
+
+results_df
+
+
+
+best_model_name=results_df['Model'][0]
+best_model=models[best_model_name]
+
+print(f'Best model is :{best_model_name}')
+
+
+best_model.fit(x_train,y_train)
+y_pred_best=best_model.predict(x_test)
+cm= confusion_matrix(y_test,y_pred_best,labels=best_model.classes_)
+cm
+
+
+# Print the classification report
+print("Classification Report for KNN Model:")
+print(classification_report(y_test, y_pred, target_names=['Setosa', 'Versicolor', 'Virginica']))
+
+
+
+# Create confusion matrix visualization
+plt.figure(figsize=(8, 6))
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt='d', cmap='coolwarm',
+            xticklabels=best_model.classes_,
+            yticklabels=best_model.classes_)
+plt.title('Confusion Matrix')
+plt.ylabel('True Label')
+plt.xlabel('Predicted Label')
+plt.tight_layout()
+plt.show()
+
+
+#Final Model Validation
+from sklearn.model_selection import cross_val_score
+
+scores= cross_val_score(model, x, y, cv=5)  # 5-fold cross-validation
+print("Cross-validation scores:", scores)
+print("Mean CV accuracy:", scores.mean())
+
+
+#Conclusion & Model Saving
+
+#After evaluating four machine learning models (Logistic Regression, Decision Tree, KNN, and SVM), 
+the K-Nearest Neighbors (KNN) model achieved the highest and most consistent performance.
+#The cross-validation mean accuracy of 96.7% confirms the model’s stability and reliability,
+Therefore, the KNN algorithm is selected as the best model for classifying Iris flower species.
+
+
+#Save the Best Model (KNN)
+import joblib
+
+# Save your trained model
+joblib.dump(model, 'best_model_knn.pkl')
+
+print("Model saved successfully as 'best_model_knn.pkl'")
+
